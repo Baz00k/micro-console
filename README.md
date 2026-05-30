@@ -20,6 +20,7 @@ In a bundled game:
 
 - `Snake`: wrap around Snake with body collision, food, score, and game-over retry.
 - `Pong`: recreation of the classic Pong game.
+- `Breakout`: clear a wall of bricks with a bouncing ball and paddle.
 - `Button Test`: shows the last pressed button, frame count, and elapsed time.
 
 ## Hardware

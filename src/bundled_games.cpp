@@ -1,5 +1,6 @@
 #include "bundled_games.h"
 
+#include "games/breakout/breakout.h"
 #include "games/button_test/button_test.h"
 #include "games/pong/pong.h"
 #include "games/snake/snake.h"
@@ -7,6 +8,7 @@
 const BundledGame *const BUNDLED_GAMES[] = {
     &SNAKE_GAME,
     &PONG_GAME,
+    &BREAKOUT_GAME,
     &BUTTON_TEST_GAME,
 };
 
