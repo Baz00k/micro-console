@@ -18,8 +18,9 @@ In a bundled game:
 
 ## Bundled Games
 
+- `Snake`: wrap around Snake with body collision, food, score, and game-over retry.
+- `Pong`: recreation of the classic Pong game.
 - `Button Test`: shows the last pressed button, frame count, and elapsed time.
-- `Snake`: wraparound Snake with body collision, food, score, and game-over retry.
 
 ## Hardware
 
@@ -30,8 +31,6 @@ Display: Nokia 5110 / PCD8544, 84x48 monochrome LCD.
 Buttons: four tactile switches wired between GPIO and GND. Firmware enables ESP32 internal pullups, so no external pullup resistors are required for the first prototype.
 
 ## Wiring
-
-Nokia 5110 modules are 3.3 V devices. Power the LCD from `3V3`, not `5V`.
 
 | Nokia 5110 pin  | ESP32-C3 pin | Firmware name       |
 | --------------- | ------------ | ------------------- |
