@@ -1,2 +1,22 @@
 [tools]
 python = "3.13"
+
+[tasks.install]
+description = "Install Python dependencies"
+run = "python -m pip install -r requirements.txt"
+
+[tasks.build]
+description = "Compile firmware"
+run = "python -m platformio run"
+
+[tasks.upload]
+description = "Compile and upload firmware"
+run = "python -m platformio run --target upload"
+
+[tasks.monitor]
+description = "Open serial monitor"
+run = "python -m platformio device monitor"
+
+[tasks.clean]
+description = "Clean PlatformIO build output"
+run = "python -m platformio run --target clean"

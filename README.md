@@ -53,14 +53,35 @@ Buttons: four tactile switches wired between GPIO and GND. Firmware enables ESP3
 
 ## Build And Upload
 
-This project uses `mise` for a PlatformIO-compatible Python version. Install the Python package dependencies once:
+This project uses `mise` to pin the Python version used by PlatformIO.
+
+Install the mise-managed tools and Python package dependencies once:
 
 ```sh
-mise exec -- python -m pip install -r requirements.txt
+mise install
+mise run install
 ```
 
+Compile the firmware:
+
 ```sh
-mise exec -- python -m platformio run
-mise exec -- python -m platformio run --target upload
-mise exec -- python -m platformio device monitor
+mise run build
+```
+
+Upload the firmware to the connected ESP32-C3 board:
+
+```sh
+mise run upload
+```
+
+Open the serial monitor:
+
+```sh
+mise run monitor
+```
+
+Clean build output:
+
+```sh
+mise run clean
 ```
