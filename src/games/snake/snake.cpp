@@ -7,6 +7,7 @@ constexpr int8_t CELL_SIZE = 4;
 constexpr int8_t GRID_TOP = 8;
 constexpr uint8_t MAX_SNAKE_LENGTH = GRID_WIDTH * GRID_HEIGHT;
 constexpr uint16_t STEP_MS = 220;
+constexpr char HIGH_SCORE_SAVE_KEY[] = "high";
 
 struct Cell {
   int8_t x = 0;
@@ -22,6 +23,7 @@ Direction direction = Direction::Right;
 Direction nextDirection = Direction::Right;
 uint16_t stepAccumulatorMs = 0;
 uint16_t score = 0;
+uint16_t highScore = 0;
 bool gameOver = false;
 
 bool sameCell(Cell a, Cell b) { return a.x == b.x && a.y == b.y; }
@@ -95,7 +97,14 @@ bool hitsBody(Cell head, bool willGrow) {
   return false;
 }
 
-void stepSnake() {
+void updateHighScore(const GameContext &context) {
+  if (score > highScore) {
+    highScore = score;
+    saveGameSave(context, HIGH_SCORE_SAVE_KEY, highScore);
+  }
+}
+
+void stepSnake(const GameContext &context) {
   direction = nextDirection;
   const Cell head = nextHead();
   const bool willGrow = sameCell(head, food);
@@ -108,6 +117,7 @@ void stepSnake() {
   if (willGrow && snakeLength < MAX_SNAKE_LENGTH) {
     snakeLength++;
     score++;
+    updateHighScore(context);
   }
 
   for (int16_t i = snakeLength - 1; i > 0; i--) {
@@ -126,7 +136,8 @@ void setDirection(Direction requested) {
   }
 }
 
-void start() {
+void start(const GameContext &context) {
+  loadGameSave(context, HIGH_SCORE_SAVE_KEY, highScore);
   snakeLength = 3;
   snake[0] = {10, 5};
   snake[1] = {9, 5};
@@ -142,7 +153,7 @@ void start() {
 void update(const InputState &input, const GameContext &context) {
   if (gameOver) {
     if (input.a.pressed) {
-      start();
+      start(context);
     }
     return;
   }
@@ -160,7 +171,7 @@ void update(const InputState &input, const GameContext &context) {
   stepAccumulatorMs += context.deltaMs;
   while (stepAccumulatorMs >= STEP_MS && !gameOver) {
     stepAccumulatorMs -= STEP_MS;
-    stepSnake();
+    stepSnake(context);
   }
 }
 
@@ -175,6 +186,8 @@ void draw(Adafruit_PCD8544 &display) {
   display.setCursor(0, 0);
   display.print("Snake ");
   display.print(score);
+  display.print("/");
+  display.print(highScore);
 
   if (gameOver) {
     display.setCursor(18, 18);
@@ -190,7 +203,7 @@ void draw(Adafruit_PCD8544 &display) {
   }
 }
 
-void stop() {}
+void stop(const GameContext &context) { updateHighScore(context); }
 } // namespace
 
-const BundledGame SNAKE_GAME = {"Snake", start, update, draw, stop};
+const BundledGame SNAKE_GAME = {"Snake", "snake", start, update, draw, stop};

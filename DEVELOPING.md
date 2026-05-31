@@ -13,4 +13,7 @@
 - A **Bundled Game** implements `start`, `update`, `draw`, and `stop`.
 - `update` receives debounced input and elapsed time.
 - `draw` may draw directly with `Adafruit_PCD8544`.
+- `start`, `update`, and `stop` receive a `GameContext` that can load and save small byte values by key.
+- Each **Bundled Game** declares a stable `saveId`; changing it starts a fresh save namespace for that game.
+- Use `loadGameSave(context, key, value)` and `saveGameSave(context, key, value)` for simple typed values such as high scores.
 - Holding `B` returns to the **Console Shell**; games do not handle that themselves.

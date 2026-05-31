@@ -2,6 +2,7 @@
 
 #include <Adafruit_PCD8544.h>
 #include <Arduino.h>
+#include <Preferences.h>
 
 #include "game.h"
 
@@ -18,6 +19,7 @@ private:
   enum class Mode { Selector, Game };
 
   void runFrame(uint32_t nowMs);
+  GameContext buildGameContext(uint32_t deltaMs, uint32_t nowMs) const;
   void updateSelector();
   void updateGame(const GameContext &context);
   void drawSelector();
@@ -26,6 +28,7 @@ private:
   void returnToSelector();
 
   Adafruit_PCD8544 &display;
+  Preferences saveStore;
   const BundledGame *const *games;
   uint8_t gameCount;
   InputState input;

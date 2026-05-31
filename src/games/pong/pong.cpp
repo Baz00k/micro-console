@@ -72,7 +72,8 @@ void resetBall() {
   cpuTargetY = CPU_HOME_Y;
 }
 
-void start() {
+void start(const GameContext &context) {
+  (void)context;
   playerY = PLAY_TOP + (PLAY_BOTTOM - PLAY_TOP - PADDLE_HEIGHT) / 2.0f;
   cpuY = playerY;
   playerScore = 0;
@@ -205,7 +206,7 @@ void updateBall(uint32_t deltaMs) {
 void update(const InputState &input, const GameContext &context) {
   if (matchOver) {
     if (input.a.pressed) {
-      start();
+      start(context);
     }
     return;
   }
@@ -251,7 +252,7 @@ void draw(Adafruit_PCD8544 &display) {
                    BALL_SIZE, BLACK);
 }
 
-void stop() {}
+void stop(const GameContext &context) { (void)context; }
 } // namespace
 
-const BundledGame PONG_GAME = {"Pong", start, update, draw, stop};
+const BundledGame PONG_GAME = {"Pong", "pong", start, update, draw, stop};

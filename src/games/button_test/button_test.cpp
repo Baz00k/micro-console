@@ -15,7 +15,8 @@ void notePressed(const ButtonInput &button, const char *label) {
   Serial.println(lastButton);
 }
 
-void start() {
+void start(const GameContext &context) {
+  (void)context;
   lastButton = "none";
   frame = 0;
   elapsedMs = 0;
@@ -51,7 +52,8 @@ void draw(Adafruit_PCD8544 &display) {
   display.print("s");
 }
 
-void stop() {}
+void stop(const GameContext &context) { (void)context; }
 } // namespace
 
-const BundledGame BUTTON_TEST_GAME = {"Button Test", start, update, draw, stop};
+const BundledGame BUTTON_TEST_GAME = {"Button Test", "button", start,
+                                      update,        draw,     stop};

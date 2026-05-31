@@ -4,6 +4,25 @@ namespace {
 constexpr uint16_t TARGET_FRAME_MS = 50;
 constexpr uint16_t MAX_DELTA_MS = 100;
 constexpr uint16_t RETURN_TO_SHELL_HOLD_MS = 1000;
+
+Preferences *activeSaveStore = nullptr;
+
+bool loadActiveGameSave(const char *key, void *data, size_t size) {
+  if (activeSaveStore == nullptr || key == nullptr || data == nullptr) {
+    return false;
+  }
+
+  return activeSaveStore->getBytesLength(key) == size &&
+         activeSaveStore->getBytes(key, data, size) == size;
+}
+
+bool saveActiveGameSave(const char *key, const void *data, size_t size) {
+  if (activeSaveStore == nullptr || key == nullptr || data == nullptr) {
+    return false;
+  }
+
+  return activeSaveStore->putBytes(key, data, size) == size;
+}
 } // namespace
 
 ConsoleShell::ConsoleShell(Adafruit_PCD8544 &display,
@@ -44,8 +63,7 @@ void ConsoleShell::runFrame(uint32_t nowMs) {
       drawGame();
     }
   } else {
-    const GameContext context{min(elapsedMs, static_cast<uint32_t>(MAX_DELTA_MS)),
-                              nowMs - gameStartMs};
+    const GameContext context = buildGameContext(elapsedMs, nowMs);
     updateGame(context);
     if (mode == Mode::Game) {
       drawGame();
@@ -54,6 +72,13 @@ void ConsoleShell::runFrame(uint32_t nowMs) {
     }
   }
   display.display();
+}
+
+GameContext ConsoleShell::buildGameContext(uint32_t deltaMs,
+                                           uint32_t nowMs) const {
+  return GameContext{min(deltaMs, static_cast<uint32_t>(MAX_DELTA_MS)),
+                     nowMs - gameStartMs, loadActiveGameSave,
+                     saveActiveGameSave};
 }
 
 void ConsoleShell::updateSelector() {
@@ -113,11 +138,15 @@ void ConsoleShell::launchSelectedGame(uint32_t nowMs) {
   gameStartMs = nowMs;
   Serial.print("launch ");
   Serial.println(games[activeGame]->title);
-  games[activeGame]->start();
+  saveStore.begin(games[activeGame]->saveId, false);
+  activeSaveStore = &saveStore;
+  games[activeGame]->start(buildGameContext(0, nowMs));
 }
 
 void ConsoleShell::returnToSelector() {
   Serial.println("return to shell");
-  games[activeGame]->stop();
+  games[activeGame]->stop(buildGameContext(0, millis()));
+  activeSaveStore = nullptr;
+  saveStore.end();
   mode = Mode::Selector;
 }

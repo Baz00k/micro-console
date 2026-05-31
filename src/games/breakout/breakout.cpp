@@ -21,6 +21,7 @@ constexpr float MAX_BALL_SPEED_X_PX_PER_MS = 0.044f;
 constexpr uint8_t BRICK_COLUMNS = 7;
 constexpr uint8_t BRICK_ROWS = 4;
 constexpr uint8_t BRICK_COUNT = BRICK_COLUMNS * BRICK_ROWS;
+constexpr char HIGH_SCORE_SAVE_KEY[] = "high";
 constexpr int16_t BRICK_WIDTH = 10;
 constexpr int16_t BRICK_HEIGHT = 4;
 constexpr int16_t BRICK_GAP = 1;
@@ -32,6 +33,7 @@ enum class State { Ready, Playing, Won, Lost };
 bool bricks[BRICK_COUNT];
 uint8_t bricksLeft = 0;
 uint16_t score = 0;
+uint16_t highScore = 0;
 float paddleX = 0;
 float ballX = 0;
 float ballY = 0;
@@ -81,7 +83,15 @@ void serveBall() {
   state = State::Playing;
 }
 
-void start() {
+void updateHighScore(const GameContext &context) {
+  if (score > highScore) {
+    highScore = score;
+    saveGameSave(context, HIGH_SCORE_SAVE_KEY, highScore);
+  }
+}
+
+void start(const GameContext &context) {
+  loadGameSave(context, HIGH_SCORE_SAVE_KEY, highScore);
   for (uint8_t i = 0; i < BRICK_COUNT; i++) {
     bricks[i] = true;
   }
@@ -114,10 +124,11 @@ void reboundFromPaddle() {
   ballVelocityY = -BALL_SPEED_Y_PX_PER_MS;
 }
 
-void hitBrick(uint8_t index) {
+void hitBrick(const GameContext &context, uint8_t index) {
   bricks[index] = false;
   bricksLeft--;
   score += 10;
+  updateHighScore(context);
   ballVelocityY = -ballVelocityY;
 
   if (bricksLeft == 0) {
@@ -125,7 +136,7 @@ void hitBrick(uint8_t index) {
   }
 }
 
-void updateBrickCollision() {
+void updateBrickCollision(const GameContext &context) {
   for (uint8_t row = 0; row < BRICK_ROWS; row++) {
     for (uint8_t column = 0; column < BRICK_COLUMNS; column++) {
       const uint8_t index = brickIndex(column, row);
@@ -135,14 +146,15 @@ void updateBrickCollision() {
 
       if (overlaps(ballX, ballY, BALL_SIZE, BALL_SIZE, brickX(column),
                    brickY(row), BRICK_WIDTH, BRICK_HEIGHT)) {
-        hitBrick(index);
+        hitBrick(context, index);
         return;
       }
     }
   }
 }
 
-void updateBall(uint32_t deltaMs) {
+void updateBall(const GameContext &context) {
+  const uint32_t deltaMs = context.deltaMs;
   ballX += ballVelocityX * deltaMs;
   ballY += ballVelocityY * deltaMs;
 
@@ -166,7 +178,7 @@ void updateBall(uint32_t deltaMs) {
     reboundFromPaddle();
   }
 
-  updateBrickCollision();
+  updateBrickCollision(context);
 
   if (ballY > PLAY_BOTTOM) {
     state = State::Lost;
@@ -176,7 +188,7 @@ void updateBall(uint32_t deltaMs) {
 void update(const InputState &input, const GameContext &context) {
   if (state == State::Won || state == State::Lost) {
     if (input.a.pressed) {
-      start();
+      start(context);
     }
     return;
   }
@@ -191,7 +203,7 @@ void update(const InputState &input, const GameContext &context) {
     return;
   }
 
-  updateBall(context.deltaMs);
+  updateBall(context);
 }
 
 void drawHud(Adafruit_PCD8544 &display) {
@@ -200,6 +212,8 @@ void drawHud(Adafruit_PCD8544 &display) {
   display.setCursor(0, 0);
   display.print("Break ");
   display.print(score);
+  display.print("/");
+  display.print(highScore);
   display.drawFastHLine(0, HUD_BOTTOM, SCREEN_WIDTH, BLACK);
 }
 
@@ -241,7 +255,8 @@ void draw(Adafruit_PCD8544 &display) {
   }
 }
 
-void stop() {}
+void stop(const GameContext &context) { updateHighScore(context); }
 } // namespace
 
-const BundledGame BREAKOUT_GAME = {"Breakout", start, update, draw, stop};
+const BundledGame BREAKOUT_GAME = {"Breakout", "breakout", start, update,
+                                   draw,       stop};
