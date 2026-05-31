@@ -1,5 +1,7 @@
 #include "games/pong/pong.h"
 
+#include <math.h>
+
 namespace {
 constexpr int16_t SCREEN_WIDTH = 84;
 constexpr int16_t SCREEN_HEIGHT = 48;
@@ -13,10 +15,16 @@ constexpr int16_t CPU_X = SCREEN_WIDTH - PLAYER_X - PADDLE_WIDTH;
 constexpr int16_t BALL_SIZE = 4;
 
 constexpr float PLAYER_SPEED_PX_PER_MS = 0.05f;
-constexpr float CPU_SPEED_PX_PER_MS = 0.032f;
-constexpr float BALL_SPEED_X_PX_PER_MS = 0.026f;
-constexpr float BALL_SPEED_Y_PX_PER_MS = 0.014f;
-constexpr float MAX_BALL_SPEED_Y_PX_PER_MS = 0.042f;
+constexpr float CPU_SPEED_PX_PER_MS = 0.025f;
+constexpr float START_BALL_SPEED_PX_PER_MS = 0.03f;
+constexpr float BALL_SPEEDUP_PX_PER_MS = 0.0025f;
+constexpr float MAX_BALL_SPEED_PX_PER_MS = 0.05f;
+constexpr float SERVE_ANGLE_Y = 0.45f;
+constexpr float MAX_REBOUND_ANGLE_Y = 0.82f;
+constexpr float CPU_DEAD_ZONE_PX = 4.0f;
+constexpr float CPU_HOME_Y =
+    PLAY_TOP + (PLAY_BOTTOM - PLAY_TOP - PADDLE_HEIGHT) / 2.0f;
+constexpr uint16_t CPU_AIM_INTERVAL_MS = 220;
 constexpr uint16_t SERVE_WAIT_MS = 900;
 constexpr uint8_t WINNING_SCORE = 11;
 
@@ -26,9 +34,12 @@ float ballX = 0;
 float ballY = 0;
 float ballVelocityX = 0;
 float ballVelocityY = 0;
+float ballSpeed = START_BALL_SPEED_PX_PER_MS;
 uint8_t playerScore = 0;
 uint8_t cpuScore = 0;
 uint16_t serveWaitMs = 0;
+uint16_t cpuAimWaitMs = 0;
+float cpuTargetY = CPU_HOME_Y;
 int8_t serveDirection = 1;
 bool matchOver = false;
 
@@ -44,12 +55,21 @@ float clampFloat(float value, float minValue, float maxValue) {
 
 int16_t roundToPixel(float value) { return static_cast<int16_t>(value + 0.5f); }
 
+void setBallVelocity(float directionX, float directionY) {
+  const float length = sqrtf(directionX * directionX + directionY * directionY);
+  ballVelocityX = ballSpeed * directionX / length;
+  ballVelocityY = ballSpeed * directionY / length;
+}
+
 void resetBall() {
   ballX = (SCREEN_WIDTH - BALL_SIZE) / 2.0f;
   ballY = PLAY_TOP + (PLAY_BOTTOM - PLAY_TOP - BALL_SIZE) / 2.0f;
-  ballVelocityX = BALL_SPEED_X_PX_PER_MS * serveDirection;
-  ballVelocityY = BALL_SPEED_Y_PX_PER_MS * (random(2) == 0 ? -1 : 1);
+  ballSpeed = START_BALL_SPEED_PX_PER_MS;
+  setBallVelocity(serveDirection,
+                  random(2) == 0 ? -SERVE_ANGLE_Y : SERVE_ANGLE_Y);
   serveWaitMs = SERVE_WAIT_MS;
+  cpuAimWaitMs = 0;
+  cpuTargetY = CPU_HOME_Y;
 }
 
 void start() {
@@ -72,10 +92,10 @@ void reboundFromPaddle(float paddleY, int8_t direction) {
   const float ballCenter = ballY + BALL_SIZE / 2.0f;
   const float offset = (ballCenter - paddleCenter) / (PADDLE_HEIGHT / 2.0f);
 
-  ballVelocityX = BALL_SPEED_X_PX_PER_MS * direction;
-  ballVelocityY =
-      clampFloat(offset * MAX_BALL_SPEED_Y_PX_PER_MS,
-                 -MAX_BALL_SPEED_Y_PX_PER_MS, MAX_BALL_SPEED_Y_PX_PER_MS);
+  ballSpeed = clampFloat(ballSpeed + BALL_SPEEDUP_PX_PER_MS,
+                         START_BALL_SPEED_PX_PER_MS, MAX_BALL_SPEED_PX_PER_MS);
+  setBallVelocity(
+      direction, clampFloat(offset, -MAX_REBOUND_ANGLE_Y, MAX_REBOUND_ANGLE_Y));
 }
 
 void scorePoint(bool playerScored) {
@@ -109,12 +129,33 @@ void updatePlayer(const InputState &input, uint32_t deltaMs) {
 
 void updateCpu(uint32_t deltaMs) {
   const float cpuCenter = cpuY + PADDLE_HEIGHT / 2.0f;
-  const float target = ballY + BALL_SIZE / 2.0f;
   const float maxMove = CPU_SPEED_PX_PER_MS * deltaMs;
 
-  if (target < cpuCenter - 1) {
+  if (ballVelocityX < 0) {
+    const float homeCenter = CPU_HOME_Y + PADDLE_HEIGHT / 2.0f;
+    if (homeCenter < cpuCenter - CPU_DEAD_ZONE_PX) {
+      cpuY -= maxMove;
+    } else if (homeCenter > cpuCenter + CPU_DEAD_ZONE_PX) {
+      cpuY += maxMove;
+    }
+    cpuY = clampFloat(cpuY, PLAY_TOP, PLAY_BOTTOM - PADDLE_HEIGHT + 1);
+    return;
+  }
+
+  if (ballX > SCREEN_WIDTH / 2 && cpuAimWaitMs == 0) {
+    cpuTargetY = ballY + BALL_SIZE / 2.0f + random(-3, 4);
+    cpuAimWaitMs = CPU_AIM_INTERVAL_MS;
+  }
+
+  if (cpuAimWaitMs > deltaMs) {
+    cpuAimWaitMs -= deltaMs;
+  } else {
+    cpuAimWaitMs = 0;
+  }
+
+  if (cpuTargetY < cpuCenter - CPU_DEAD_ZONE_PX) {
     cpuY -= maxMove;
-  } else if (target > cpuCenter + 1) {
+  } else if (cpuTargetY > cpuCenter + CPU_DEAD_ZONE_PX) {
     cpuY += maxMove;
   }
 
