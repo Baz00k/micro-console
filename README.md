@@ -1,35 +1,40 @@
 # Micro Console
 
-Tiny ESP32-C3 handheld console starter using PlatformIO, a Nokia 5110 / PCD8544 LCD, and four tactile buttons.
+Tiny ESP32 powered handheld console using PlatformIO, a Nokia 5110 / PCD8544 LCD, and four tactile buttons.
 
-The firmware boots into the **Console Shell**, a simple bundled game selector currently titled `Micro Arcade`.
+![breadboard](docs/img/breadboard.jpg)
+
+## Bundled Games
+
+- Snake
+- Pong
+- Breakout
+- Flappy bird
+- Space Invaders
+- Asteroids
+- Button test
 
 ## Controls
 
 In the **Console Shell**:
 
-- `LEFT` / `RIGHT`: choose a bundled game.
-- `A`: launch the selected bundled game.
-- `B`: no action.
+- `LEFT` / `RIGHT`: choose a game.
+- `A`: launch the selected game.
 
-In a bundled game:
+In game:
 
 - Hold `B` for about 1 second to return to the **Console Shell**.
-
-## Bundled Games
-
-- `Snake`: wrap around Snake with body collision, food, score, and game-over retry.
-- `Pong`: recreation of the classic Pong game.
-- `Breakout`: clear a wall of bricks with a bouncing ball and paddle.
-- `Button Test`: shows the last pressed button, frame count, and elapsed time.
+- The controls vary by game.
 
 ## Hardware
+
+The console is based on SeedStudio ESP32-C3 microcontroller.
 
 Target board: `esp32-c3-devkitm-1`
 
 Display: Nokia 5110 / PCD8544, 84x48 monochrome LCD.
 
-Buttons: four tactile switches wired between GPIO and GND. Firmware enables ESP32 internal pullups, so no external pullup resistors are required for the first prototype.
+Buttons: four tactile switches wired between GPIO and GND. Firmware enables ESP32 internal pullups, so no external pullup resistors are required.
 
 ## Wiring
 
@@ -53,8 +58,7 @@ Buttons: four tactile switches wired between GPIO and GND. Firmware enables ESP3
 
 ## Build And Upload
 
-This project uses `mise` to pin the Python version used by PlatformIO.
-
+This project uses `mise` for tool management.
 Install the mise-managed tools and Python package dependencies once:
 
 ```sh
@@ -68,7 +72,7 @@ Compile the firmware:
 mise run build
 ```
 
-Upload the firmware to the connected ESP32-C3 board:
+Upload the firmware to the connected ESP32 board:
 
 ```sh
 mise run upload
