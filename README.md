@@ -53,8 +53,8 @@ Buttons: four tactile switches wired between GPIO and GND. Firmware enables ESP3
 | ------ | ------------ | ----------------------------- |
 | LEFT   | GPIO20       | Button between GPIO20 and GND |
 | RIGHT  | GPIO8        | Button between GPIO8 and GND  |
-| A      | GPIO9        | Button between GPIO9 and GND  |
-| B      | GPIO10       | Button between GPIO10 and GND |
+| A      | GPIO10       | Button between GPIO10 and GND |
+| B      | GPIO9        | Button between GPIO9 and GND  |
 
 ## Build And Upload
 
